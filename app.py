@@ -47,6 +47,7 @@ def borrar_historial_db():
     conn.commit()
     conn.close()
 
+# Inicialización de estados en la sesión
 if "historial" not in st.session_state:
     st.session_state.historial = cargar_historial()
     
@@ -60,6 +61,9 @@ if "esperando_numeros" not in st.session_state:
     st.session_state.esperando_numeros = False
     st.session_state.paso_suma = 0
     st.session_state.n1 = 0.0
+
+if "esperando_clima" not in st.session_state:
+    st.session_state.esperando_clima = False
 
 # Renderizar el historial en pantalla
 for mensaje in st.session_state.historial:
@@ -110,6 +114,20 @@ if usuario:
         except ValueError:
             respuesta_lorenzo = "eso ni siquiera es un número, no inventes. Vuelve a intentar:"
 
+    # Lógica para el subproceso del clima
+    elif st.session_state.esperando_clima:
+        if usuario_lower == "soleado":
+            respuesta_lorenzo = "El clima por los siguientes 3 días será: Martes: día soleado a 25 grados, Miercoles: día soleado con algunas nubes a 24 grados, Jueves: será un día nublado a 23 grados."
+        elif usuario_lower == "nublado":
+            respuesta_lorenzo = "El clima por los siguientes 3 días será: Martes: día nublado a 24 grados, Miercoles: día con posibles lluvias a 24 grados, Jueves: será un día soleado a 25 grados."
+        elif usuario_lower == "lluvioso":
+            respuesta_lorenzo = "El clima por los siguientes 3 días será: Martes: día con lluvia a 24 grados, Miercoles: día nublado a 23 grados, Jueves: será un día soleado a 25 grados."
+        else:
+            respuesta_lorenzo = "Hostia No entendí ese clima. Intenta con 'soleado', 'nublado' o 'lluvioso'."
+        
+        # Apagamos el estado para volver al flujo normal
+        st.session_state.esperando_clima = False
+
     # Respuestas y comandos normales
     else:
         if usuario_lower == "hola":
@@ -148,82 +166,49 @@ if usuario:
             st.session_state.operacion = "division" 
             respuesta_lorenzo = "dime el primer número para dividirlo:"
 
-        # --- NUEVAS FUNCIONES AGREGADAS ---
+        # --- NUEVAS FUNCIONES ---
         
-        # 1. PREDICCIÓN DEL CLIMA
-          # Pasamos el texto a minúsculas para evitar errores si el usuario escribe "Soleado"
-    clima = clima.lower()
-   
-    if clima == "soleado":
-        return "El clima por los siguientes 3 días será: Martes: día soleado a 25 grados, Miercoles: día soleado con algunas nubes a 24 grados, Jueves: será un día nublado a 23 grados."
-
-    elif clima == "nublado":
-        return "El clima por los siguientes 3 días será: Martes: día nublado a 24 grados, Miercoles: día con posibles lluvias a 24 grados, Jueves: será un día soleado a 25 grados."
-   
-    elif clima == "lluvioso":
-        return "El clima por los siguientes 3 días será: Martes: día con lluvia a 24 grados, Miercoles: día nublado a 23 grados, Jueves: será un día soleado a 25 grados."
-   
-    else:
-        return "Hostia No entendí ese clima. Intenta con 'soleado', 'nublado' o 'lluvioso'."
-
-
-def chatbot_clima():
-    print("Hola, soy Lorenzo, el bot del clima.")
-    print("Te voy a predecir el clima de los siguientes 3 días en base a cómo está hoy (ostia).\n")
-   
-    while True:
-        clima_input = input("¿Cómo está el clima el día de hoy lunes? (escribe 'salir' para terminar): ")
-       
-        if clima_input.lower() == 'salir':
-            print("¡Que tengas un climático día!")
-            break
-       
-        resultado = predecir_clima(clima_input)
-       
-        print("\n=== Lorenzo bot del clima dice ===")
-        print(resultado)
+        # 1. PREDICCIÓN DEL CLIMA (Inicia la pregunta)
+        elif usuario_lower in ["clima", "prediccion del clima", "como esta el clima", "tiempo"]:
+            st.session_state.esperando_clima = True
+            respuesta_lorenzo = "Hola, soy Lorenzo, el bot del clima (ostia). ¿Cómo está el clima el día de hoy lunes? (soleado, nublado o lluvioso):"
 
         # 2. JUEGO DE DADOS
-       input("presiona enter para lanzar tu dado")
-tu_dado = random.randint(1,6)
-ia_predice = random.randint(1,6)
+        elif usuario_lower in ["dados", "juego de dados", "tirar dados", "dado"]:
+            tu_dado = random.randint(1, 6)
+            ia_predice = random.randint(1, 6)
+            
+            resultado_dados = f"Tu dado: {tu_dado} | La IA predice: {ia_predice}. "
+            if tu_dado > ia_predice:
+                respuesta_lorenzo = resultado_dados + "Tu ganas la ia perdio jijijija"
+            elif ia_predice > tu_dado:
+                respuesta_lorenzo = resultado_dados + "La ia gana tu pierdes chispas"
+            else:
+                respuesta_lorenzo = resultado_dados + "Es un empate ostia"
 
-print(f"tu dado: {tu_dado}")
-print(f"la ia predice: {ia_predice}")
+        # 3. LA LOTERÍA (Con 2 pares de dígitos)
+        elif usuario_lower in ["loteria", "lotería", "jugar loteria"]:
+            par_ganador1 = random.randint(10, 99)
+            par_ganador2 = random.randint(10, 99)
+            pares_ganadores = [par_ganador1, par_ganador2]
 
-if tu_dado > ia_predice:
-    print("tu ganas la ia perdio jijijija")
-elif ia_predice > tu_dado:
-     print("la ia gana tu pierdes chispas")
-else:
-    print("es un empate ostia")
+            tu_par1 = random.randint(10, 99)
+            tu_par2 = random.randint(10, 99)
+            tus_pares = [tu_par1, tu_par2]
 
-        # 3. LA LOTERÍA
-        elif usuario_lower in ["loteria", "lotería", "jugar loteria", "dame mi carta"]:
-    par_ganador1 = random.randint(10, 99)
-par_ganador2 = random.randint(10, 99)
-pares_ganadores = [par_ganador1, par_ganador2]
+            # Ordenamos ambos para comparar correctamente
+            pares_ganadores.sort()
+            tus_pares.sort()
 
-print("La IA ya generó los 2 pares ganadores de hoy...")
-input("Presiona ENTER para generar tus 2 pares aleatorios... 🎟")
+            resultado_loteria = (
+                f"[IA] Los 2 pares ganadores son: {pares_ganadores[0]} y {pares_ganadores[1]} \n\n"
+                f"[TÚ] Tus 2 pares de la suerte son: {tus_pares[0]} y {tus_pares[1]} \n\n"
+            )
 
-# 2. Se generan tus 2 pares aleatorios
-tu_par1 = random.randint(10, 99)
-tu_par2 = random.randint(10, 99)
-tus_pares = [tu_par1, tu_par2]
-
-# Ordenamos ambos para que no importe cuál salió primero
-pares_ganadores.sort()
-tus_pares.sort()
-
-print(f"\n[IA] Los 2 pares ganadores son: {pares_ganadores[0]} y {pares_ganadores[1]}")
-print(f"[TÚ] Tus 2 pares de la suerte son: {tus_pares[0]} y {tus_pares[1]}\n")
-
-# 3. Lógica para verificar si ganaste
-if tus_pares == pares_ganadores:
-    print("¡¡¡BRUTAL!!! ¡Le atinaste a los 2 pares y ganaste la lotería! 🏆🎉")
-else:
-    print("No coincidieron los dos pares. ¡Suerte para la próxima! ❌🤖")
+            if tus_pares == pares_ganadores:
+                respuesta_lorenzo = resultado_loteria + "¡¡¡BRUTAL!!! ¡Le atinaste a los 2 pares y ganaste la lotería! 🏆🎉"
+            else:
+                respuesta_lorenzo = resultado_loteria + "No coincidieron los dos pares. ¡Suerte para la próxima! ❌🤖"
 
         # --- PREGUNTAS AL AZAR ---
         elif "de que color es el agua" in usuario_lower or "de que color es el awa" in usuario_lower:
